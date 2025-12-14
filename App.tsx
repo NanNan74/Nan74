@@ -1,96 +1,51 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Confetti from './components/Confetti';
 import ParticleHeart from './components/ParticleHeart';
 
-// --- COMPONENT NHẠC FIX LỖI (Dùng cơ chế điều khiển YouTube API) ---
-const InlineMusicPlayer = () => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  // Link Youtube (Dùng bản Audio Lyrics để load nhanh hơn và ít bị chặn)
+// --- COMPONENT NHẠC (Giao diện hiển thị Video rõ ràng - Ổn định nhất) ---
+const VisibleMusicPlayer = () => {
+  // ID Youtube bài: Không Yêu Em Thì Yêu Ai
   const YOUTUBE_ID = "D-yDpwqN3IQ"; 
-
-  // Hàm gửi lệnh Play/Pause vào iframe Youtube
-  const togglePlay = () => {
-    if (iframeRef.current && iframeRef.current.contentWindow) {
-      const action = isPlaying ? 'pauseVideo' : 'playVideo';
-      iframeRef.current.contentWindow.postMessage(
-        JSON.stringify({ event: 'command', func: action, args: [] }), 
-        '*'
-      );
-      setIsPlaying(!isPlaying);
-    }
-  };
+  const youtubeSrc = `https://www.youtube.com/embed/${YOUTUBE_ID}?autoplay=1&loop=1&playlist=${YOUTUBE_ID}&controls=1&showinfo=0&modestbranding=1`;
 
   return (
-    <div className="w-full max-w-sm mx-auto mt-4 relative z-50">
-      {/* Giao diện máy nghe nhạc */}
-      <div className={`relative overflow-hidden rounded-xl border transition-all duration-500 ${isPlaying ? 'bg-pink-50 border-pink-200 shadow-inner' : 'bg-white border-gray-100 shadow-sm'}`}>
+    <div className="w-full max-w-[320px] mx-auto mt-4">
+      {/* Khung bao ngoài giống giao diện Widget */}
+      <div className="bg-white rounded-2xl shadow-xl border border-pink-100 overflow-hidden transform transition-all hover:scale-105 duration-300">
         
-        <div className="flex items-center p-3 gap-3">
-          {/* Nút Play/Pause (Đĩa than) */}
-          <button 
-            onClick={togglePlay}
-            className="relative w-12 h-12 flex-shrink-0 group focus:outline-none cursor-pointer"
-          >
-            <div className={`w-full h-full rounded-full bg-gradient-to-tr from-pink-500 to-purple-500 shadow-md flex items-center justify-center transition-transform duration-[3s] ${isPlaying ? 'animate-[spin_4s_linear_infinite]' : ''}`}>
-              <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center">
-                 <div className="w-1.5 h-1.5 bg-gray-800 rounded-full"></div>
-              </div>
-            </div>
-            {/* Icon phủ lên trên */}
-            <div className="absolute inset-0 flex items-center justify-center text-white bg-black/10 rounded-full hover:bg-black/30 transition-all">
-              {isPlaying ? '⏸' : '▶'}
-            </div>
-          </button>
-
-          {/* Thông tin bài hát */}
-          <div className="flex-1 text-left overflow-hidden">
-            <div className="text-sm font-bold text-gray-800 truncate">
-              Không Yêu Em Thì Yêu Ai
-            </div>
-            <div className="text-xs text-gray-500 truncate">
-               Vũ. ft. Low G
-            </div>
+        {/* Phần Tiêu đề: NHẠC NỀN */}
+        <div className="px-4 py-2 bg-gradient-to-r from-pink-50 to-white flex items-center justify-between border-b border-pink-100">
+          <div className="flex items-center gap-2">
+            <span className="text-pink-500 animate-pulse">📛</span>
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Nhạc Nền</span>
           </div>
-
-          {/* Sóng nhạc animation */}
-          <div className="flex items-end gap-[2px] h-4">
-            {[...Array(4)].map((_, i) => (
-              <div 
-                key={i} 
-                className={`w-1 bg-pink-400 rounded-t-sm transition-all duration-300 ${isPlaying ? 'animate-music-bar' : 'h-1'}`}
-                style={{ animationDelay: `${i * 0.1}s` }}
-              ></div>
-            ))}
+          <div className="flex gap-1">
+             <div className="w-2 h-2 rounded-full bg-red-400"></div>
+             <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
+             <div className="w-2 h-2 rounded-full bg-green-400"></div>
           </div>
         </div>
 
-        {/* Thanh tiến trình chạy */}
-        {isPlaying && (
-           <div className="absolute bottom-0 left-0 h-0.5 bg-pink-500 animate-[width_200s_linear_forwards]" style={{width: '0%'}}></div>
-        )}
-      </div>
+        {/* Video Youtube hiển thị rõ ràng */}
+        <div className="relative w-full aspect-video bg-black">
+          <iframe 
+            width="100%" 
+            height="100%" 
+            src={youtubeSrc} 
+            title="Music Player" 
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowFullScreen
+          />
+        </div>
 
-      {/* Iframe Youtube (RENDER LUÔN nhưng ẩn đi - Kỹ thuật quan trọng để không bị trình duyệt chặn) */}
-      <div className="absolute opacity-0 pointer-events-none w-1 h-1 overflow-hidden -z-10 top-0 left-0">
-        <iframe 
-          ref={iframeRef}
-          width="300" 
-          height="200" 
-          // enablejsapi=1 là bắt buộc để điều khiển bằng nút bấm bên ngoài
-          src={`https://www.youtube.com/embed/${YOUTUBE_ID}?enablejsapi=1&controls=0&loop=1&playlist=${YOUTUBE_ID}&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
-          title="Youtube Player"
-          allow="autoplay; encrypted-media" 
-          allowFullScreen
-        />
+        {/* Chân trang nhỏ */}
+        <div className="px-4 py-2 bg-white text-center">
+           <p className="text-[10px] text-gray-400 font-light italic">
+             (Vũ. feat Low G)
+           </p>
+        </div>
       </div>
-
-      {!isPlaying && (
-        <p className="text-[10px] text-gray-400 mt-2 text-center italic animate-pulse">
-          (Bấm vào nút Play để nhạc lên nha)
-        </p>
-      )}
     </div>
   );
 };
@@ -107,11 +62,12 @@ function App() {
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-indigo-100 overflow-x-hidden text-slate-800 font-sans">
       
+      {/* Hiệu ứng */}
       <Confetti />
       
       <main className={`relative z-20 flex flex-col items-center justify-center min-h-screen p-4 transition-opacity duration-1000 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
         
-        {/* Card */}
+        {/* Card Chính */}
         <div className="bg-white/80 backdrop-blur-md shadow-2xl rounded-3xl p-6 md:p-10 max-w-4xl w-full text-center border border-white/50 relative overflow-hidden">
           
           <h1 className="font-script text-4xl md:text-5xl lg:text-6xl bg-gradient-to-r from-pink-600 to-violet-600 bg-clip-text text-transparent mb-4 leading-tight">
@@ -135,12 +91,15 @@ function App() {
                 ❤️ Phiếu bầu của bạn đã được ghi nhận
              </div>
              
-             {/* Component Nhạc ở đây */}
-             <div className="mt-6 pt-4 border-t border-gray-100">
-               <p className="text-gray-500 italic font-script text-xl md:text-2xl mb-2">
+             {/* Component Nhạc Nằm Gọn Ở Đây */}
+             <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col items-center">
+               <p className="text-gray-500 italic font-script text-xl md:text-2xl mb-4">
                  "Cả nhà nghe bài hát này thư giãn nhé iu" 🎵
                </p>
-               <InlineMusicPlayer />
+               
+               {/* Khung nhạc hiển thị giống trong ảnh */}
+               <VisibleMusicPlayer />
+
              </div>
           </div>
 
@@ -153,26 +112,6 @@ function App() {
       </main>
     </div>
   );
-}
-
-// Inject styles
-if (typeof document !== 'undefined') {
-  const styles = `
-    @keyframes music-bar {
-      0%, 100% { height: 4px; }
-      50% { height: 16px; }
-    }
-    .animate-music-bar {
-      animation: music-bar 0.8s ease-in-out infinite;
-    }
-    @keyframes width {
-      from { width: 0%; }
-      to { width: 100%; }
-    }
-  `;
-  const styleSheet = document.createElement("style");
-  styleSheet.innerText = styles;
-  document.head.appendChild(styleSheet);
 }
 
 export default App;
