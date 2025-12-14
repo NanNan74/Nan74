@@ -1,91 +1,124 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Confetti from './components/Confetti';
 import ParticleHeart from './components/ParticleHeart';
 
-// --- COMPONENT NHẠC MP3 (Chạy link trực tiếp - Không lo bản quyền Youtube) ---
-const VisibleMusicPlayer = () => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
+// --- COMPONENT TRÒ CHƠI: CỜ CARO (Tic Tac Toe) ---
+const TicTacToe = () => {
+  const [board, setBoard] = useState(Array(9).fill(null));
+  const [isPlayerTurn, setIsPlayerTurn] = useState(true); // Player là ❤️
+  const [winner, setWinner] = useState<string | null>(null);
 
-  // Link nhạc MP3 trực tiếp (Online)
-  const MUSIC_URL = "https://raw.githubusercontent.com/loi-nguyen-code/music-player/main/assets/music/KhongYeuEmThiYeuAi.mp3";
-  
-  // Link Ảnh bìa Album (Lấy từ thumbnail Youtube cho đẹp)
-  const ALBUM_COVER = "https://i.ytimg.com/vi/D-yDpwqN3IQ/maxresdefault.jpg";
-
-  // Xử lý khi bấm nút Play/Pause
-  const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
+  // Logic kiểm tra thắng thua
+  const checkWinner = (squares: any[]) => {
+    const lines = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8], // Hàng ngang
+      [0, 3, 6], [1, 4, 7], [2, 5, 8], // Hàng dọc
+      [0, 4, 8], [2, 4, 6]             // Chéo
+    ];
+    for (let i = 0; i < lines.length; i++) {
+      const [a, b, c] = lines[i];
+      if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+        return squares[a];
       }
-      setIsPlaying(!isPlaying);
+    }
+    return null;
+  };
+
+  // Bot tự động đi
+  useEffect(() => {
+    if (!isPlayerTurn && !winner && board.includes(null)) {
+      const timer = setTimeout(() => {
+        const emptyIndices = board.map((val, idx) => val === null ? idx : null).filter(val => val !== null);
+        if (emptyIndices.length > 0) {
+          const randomIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+          if (randomIndex !== null && randomIndex !== undefined) {
+             handleClick(randomIndex, false); 
+          }
+        }
+      }, 600); // Bot nghĩ 0.6s
+      return () => clearTimeout(timer);
+    }
+  }, [isPlayerTurn, winner, board]);
+
+  const handleClick = (index: number, isHuman: boolean) => {
+    if (board[index] || winner) return;
+    if (isHuman && !isPlayerTurn) return; // Không cho click khi đến lượt bot
+
+    const newBoard = [...board];
+    newBoard[index] = isHuman ? '❤️' : '⭕';
+    setBoard(newBoard);
+    
+    const w = checkWinner(newBoard);
+    if (w) {
+      setWinner(w);
+    } else if (!newBoard.includes(null)) {
+      setWinner('Hòa');
+    } else {
+      setIsPlayerTurn(!isHuman);
     }
   };
 
-  return (
-    <div className="w-full max-w-[340px] mx-auto mt-4">
-      {/* Thẻ Audio ẩn (Core xử lý nhạc) */}
-      <audio ref={audioRef} src={MUSIC_URL} loop />
+  const resetGame = () => {
+    setBoard(Array(9).fill(null));
+    setWinner(null);
+    setIsPlayerTurn(true);
+  };
 
-      {/* Khung giao diện Player */}
-      <div className="bg-white rounded-2xl shadow-xl border border-pink-200 overflow-hidden transform transition-all hover:shadow-2xl duration-300">
+  return (
+    <div className="w-full max-w-[320px] mx-auto mt-6">
+      <div className="bg-white rounded-2xl shadow-xl border border-pink-200 overflow-hidden">
         
-        {/* Header Player */}
-        <div className="px-4 py-2.5 bg-gradient-to-r from-pink-50 to-white flex items-center justify-between border-b border-pink-100">
+        {/* Header Game */}
+        <div className="px-4 py-3 bg-gradient-to-r from-pink-100 to-white flex items-center justify-between border-b border-pink-100">
           <div className="flex items-center gap-2">
-            <span className={`text-pink-500 text-lg ${isPlaying ? 'animate-spin-slow' : ''}`}>💿</span>
-            <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-              {isPlaying ? 'Now Playing' : 'Music Player'}
+            <span className="text-lg">🎮</span>
+            <span className="text-xs font-bold text-pink-600 uppercase tracking-widest">
+              Mini Game: Caro
             </span>
           </div>
-          <div className="flex gap-1.5 opacity-50">
-             <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
-             <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
-             <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
-          </div>
+          <button onClick={resetGame} className="text-xs bg-white border border-pink-200 px-2 py-1 rounded hover:bg-pink-50 text-gray-500 transition">
+            Chơi lại ↺
+          </button>
         </div>
 
-        {/* Khu vực Ảnh bìa & Nút Play trung tâm */}
-        <div className="relative w-full aspect-video group cursor-pointer" onClick={togglePlay}>
-          {/* Ảnh bìa */}
-          <img 
-            src={ALBUM_COVER} 
-            alt="Album Cover" 
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-          />
-          
-          {/* Lớp phủ đen mờ */}
-          <div className={`absolute inset-0 bg-black/30 transition-opacity duration-300 ${isPlaying ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}></div>
-
-          {/* Nút Play to ở giữa */}
-          <div className={`absolute inset-0 flex items-center justify-center transition-transform duration-300 ${isPlaying ? 'scale-0 group-hover:scale-100' : 'scale-100'}`}>
-            <div className="w-14 h-14 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all">
-               {isPlaying ? (
-                 <span className="text-pink-600 text-2xl font-bold ml-0.5">⏸</span>
-               ) : (
-                 <span className="text-pink-600 text-2xl font-bold ml-1">▶</span>
-               )}
+        {/* Bàn cờ */}
+        <div className="p-4 bg-pink-50/50">
+          {winner ? (
+            <div className="text-center py-8 animate-bounce">
+              <p className="text-xl font-bold text-gray-700">
+                {winner === 'Hòa' ? 'Hòa nhau rồi! 🤝' : `Người thắng: ${winner}`}
+              </p>
+              <button 
+                onClick={resetGame}
+                className="mt-4 px-4 py-2 bg-pink-500 text-white rounded-full shadow-lg hover:bg-pink-600 transition"
+              >
+                Chơi ván mới
+              </button>
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {board.map((cell, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleClick(index, true)}
+                  className={`h-20 w-full bg-white rounded-xl shadow-sm border-2 border-pink-100 text-3xl flex items-center justify-center transition-all hover:bg-pink-50 ${!cell && isPlayerTurn ? 'hover:scale-105' : ''}`}
+                  disabled={!!cell || !isPlayerTurn}
+                >
+                  <span className={cell ? 'scale-100 transition-transform duration-300' : 'scale-0'}>
+                    {cell}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Thông tin bài hát & Thanh chạy */}
-        <div className="px-4 py-3 bg-white flex flex-col items-start gap-1 relative">
-           <h3 className="text-sm font-bold text-gray-800 leading-none">
-             Không Yêu Em Thì Yêu Ai
-           </h3>
-           <p className="text-xs text-pink-500 font-medium">
-             Vũ. feat Low G
-           </p>
-           
-           {/* Thanh tiến trình giả lập */}
-           <div className="w-full h-1 bg-gray-100 rounded-full mt-3 overflow-hidden relative">
-             <div className={`h-full bg-gradient-to-r from-pink-400 to-purple-400 absolute top-0 left-0 rounded-full ${isPlaying ? 'animate-width-grow' : 'w-0'}`}></div>
-           </div>
-        </div>
+        {/* Footer trạng thái */}
+        {!winner && (
+          <div className="px-4 py-2 bg-white text-center text-xs text-gray-500 font-medium">
+             {isPlayerTurn ? "Đến lượt bạn (❤️)" : "Máy đang suy nghĩ..."}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -132,14 +165,14 @@ function App() {
                 ❤️ Phiếu bầu của bạn đã được ghi nhận
              </div>
              
-             {/* Khu vực Nhạc */}
+             {/* Khu vực Trò chơi */}
              <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col items-center">
-               <p className="text-gray-500 italic font-script text-xl md:text-2xl mb-4">
-                 "Cả nhà nghe bài hát này thư giãn nhé iu" 🎵
+               <p className="text-gray-500 italic font-script text-xl md:text-2xl mb-2">
+                 "Rảnh tay thì làm ván cờ nhân phẩm nhé!" 👇
                </p>
                
-               {/* Component Nhạc Cố Định */}
-               <VisibleMusicPlayer />
+               {/* Component Game Caro */}
+               <TicTacToe />
 
              </div>
           </div>
@@ -153,29 +186,6 @@ function App() {
       </main>
     </div>
   );
-}
-
-// Inject styles
-if (typeof document !== 'undefined') {
-  const styles = `
-    @keyframes spin-slow {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-    .animate-spin-slow {
-      animation: spin-slow 4s linear infinite;
-    }
-    @keyframes width-grow {
-      from { width: 0%; }
-      to { width: 100%; }
-    }
-    .animate-width-grow {
-      animation: width-grow 200s linear forwards; 
-    }
-  `;
-  const styleSheet = document.createElement("style");
-  styleSheet.innerText = styles;
-  document.head.appendChild(styleSheet);
 }
 
 export default App;
