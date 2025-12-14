@@ -261,7 +261,7 @@ function App() {
              {/* Khu vực Trò chơi */}
              <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col items-center">
                <p className="text-gray-500 italic font-script text-xl md:text-2xl mb-2">
-                 "Cả nhà có thể giải trí bằng trò caro này ạ, hoan hỉ cho Như nếu nó hơm giải trí nhé" 👇
+                 "Cả nhà có thể giải trí bằng trò caro này ạ, hoan hỉ cho Như nếu cả nhà chơi xong hơm thấy giải trí hhehe" 😄
                </p>
                
                {/* Component Game Smart */}
