@@ -268,7 +268,7 @@ function App() {
              {/* Khu vực Trò chơi */}
              <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col items-center">
                <p className="text-gray-500 italic font-script text-xl md:text-2xl mb-2">
-                 "Bot này khôn lắm, thử thắng xem!" 👇
+                 "Cả nhà có thể chơi caro giải trí ạ, hoan hỉ cho Như nếu chơi xong cả nhà hơm thấy giải trí lắm hhehe 😄
                </p>
                
                {/* Component Game Smart + Đổi lượt */}
