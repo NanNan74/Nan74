@@ -2,25 +2,26 @@ import React, { useState, useEffect } from 'react';
 import Confetti from './components/Confetti';
 import ParticleHeart from './components/ParticleHeart';
 
-// --- COMPONENT GAME CARO 3x3 (BO3 - 3 Thắng 2) ---
-const TicTacToeBO3 = () => {
+// --- COMPONENT GAME CARO 3x3 (SMART BOT - BIẾT CHẶN) ---
+const TicTacToeSmart = () => {
   const WIN_SERIES = 2; // Thắng 2 ván là Vô Địch
 
   const [board, setBoard] = useState(Array(9).fill(null));
   const [isPlayerTurn, setIsPlayerTurn] = useState(true); 
-  const [roundWinner, setRoundWinner] = useState<string | null>(null); // Người thắng ván lẻ
-  const [gameWinner, setGameWinner] = useState<string | null>(null);   // Người thắng chung cuộc (Vô địch)
+  const [roundWinner, setRoundWinner] = useState<string | null>(null);
+  const [gameWinner, setGameWinner] = useState<string | null>(null);
   const [scores, setScores] = useState({ player: 0, bot: 0 });
 
-  // Logic kiểm tra thắng (3 ô thẳng hàng)
+  // Các đường thắng
+  const WINNING_LINES = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8], // Ngang
+    [0, 3, 6], [1, 4, 7], [2, 5, 8], // Dọc
+    [0, 4, 8], [2, 4, 6]             // Chéo
+  ];
+
   const checkWinner = (squares: any[]) => {
-    const lines = [
-      [0, 1, 2], [3, 4, 5], [6, 7, 8], 
-      [0, 3, 6], [1, 4, 7], [2, 5, 8], 
-      [0, 4, 8], [2, 4, 6]
-    ];
-    for (let i = 0; i < lines.length; i++) {
-      const [a, b, c] = lines[i];
+    for (let i = 0; i < WINNING_LINES.length; i++) {
+      const [a, b, c] = WINNING_LINES[i];
       if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
         return squares[a];
       }
@@ -28,69 +29,96 @@ const TicTacToeBO3 = () => {
     return null;
   };
 
-  // Xử lý khi có người thắng ván
   const handleWin = (winnerSign: string) => {
     setRoundWinner(winnerSign);
-    
-    // Cập nhật điểm số
     const newScores = { ...scores };
     if (winnerSign === '❤️') newScores.player += 1;
     else newScores.bot += 1;
     setScores(newScores);
 
-    // Kiểm tra Vô Địch
     if (newScores.player >= WIN_SERIES) setGameWinner('Bạn (❤️)');
     else if (newScores.bot >= WIN_SERIES) setGameWinner('Máy (⭕)');
   };
 
-  // --- BOT LOGIC (0.6s delay) ---
+  // --- TRÍ TUỆ NHÂN TẠO CỦA BOT ---
+  const getSmartMove = (currentBoard: any[]) => {
+    // 1. ƯU TIÊN THẮNG: Tìm xem Bot có cơ hội thắng ngay không (2 ô O)
+    for (let line of WINNING_LINES) {
+      const [a, b, c] = line;
+      const values = [currentBoard[a], currentBoard[b], currentBoard[c]];
+      const botCount = values.filter(v => v === '⭕').length;
+      const emptyCount = values.filter(v => v === null).length;
+      
+      if (botCount === 2 && emptyCount === 1) {
+        return line[values.indexOf(null)]; // Đánh vào ô trống để thắng
+      }
+    }
+
+    // 2. ƯU TIÊN CHẶN: Tìm xem Người chơi sắp thắng không (2 ô Tim)
+    for (let line of WINNING_LINES) {
+      const [a, b, c] = line;
+      const values = [currentBoard[a], currentBoard[b], currentBoard[c]];
+      const playerCount = values.filter(v => v === '❤️').length;
+      const emptyCount = values.filter(v => v === null).length;
+      
+      if (playerCount === 2 && emptyCount === 1) {
+        return line[values.indexOf(null)]; // Chặn ngay
+      }
+    }
+
+    // 3. ƯU TIÊN GIỮA: Nếu ô giữa trống, chiếm ngay (chiến thuật tốt nhất)
+    if (currentBoard[4] === null) return 4;
+
+    // 4. ĐI NGẪU NHIÊN: Nếu không rơi vào các trường hợp trên
+    const emptyIndices = currentBoard.map((val, idx) => val === null ? idx : null).filter(val => val !== null);
+    if (emptyIndices.length > 0) {
+      return emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+    }
+    return null;
+  };
+
+  // --- EFFECT CHO BOT ---
   useEffect(() => {
-    // Chỉ chạy khi: Đến lượt máy VÀ Chưa ai thắng ván VÀ Chưa ai vô địch
     if (!isPlayerTurn && !roundWinner && !gameWinner) {
       const timer = setTimeout(() => {
-        const emptyIndices = board.map((val, idx) => val === null ? idx : null).filter(val => val !== null);
+        // Gọi hàm Bot thông minh
+        const moveIndex = getSmartMove(board);
         
-        if (emptyIndices.length > 0) {
-          const randomIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+        if (moveIndex !== null) {
+          const newBoard = [...board];
+          newBoard[moveIndex] = '⭕';
+          setBoard(newBoard);
           
-          if (randomIndex !== null && randomIndex !== undefined) {
-            const newBoard = [...board];
-            newBoard[randomIndex] = '⭕';
-            setBoard(newBoard);
-            
-            const w = checkWinner(newBoard);
-            if (w) handleWin(w);
-            else if (!newBoard.includes(null)) setRoundWinner('Hòa');
-            else setIsPlayerTurn(true); // Trả lượt cho người
-          }
+          const w = checkWinner(newBoard);
+          if (w) handleWin(w);
+          else if (!newBoard.includes(null)) setRoundWinner('Hòa');
+          else setIsPlayerTurn(true);
         }
-      }, 600); // 0.6s
+      }, 700); // Tăng delay lên 0.7s giả vờ suy nghĩ kỹ hơn
       return () => clearTimeout(timer);
     }
   }, [isPlayerTurn, roundWinner, gameWinner, board]);
 
-  // --- PLAYER LOGIC ---
+  // --- PLAYER ---
   const handlePlayerClick = (index: number) => {
     if (board[index] || roundWinner || gameWinner || !isPlayerTurn) return;
 
     const newBoard = [...board];
     newBoard[index] = '❤️';
     setBoard(newBoard);
-    setIsPlayerTurn(false); // Khóa lượt ngay
+    setIsPlayerTurn(false);
 
     const w = checkWinner(newBoard);
     if (w) handleWin(w);
     else if (!newBoard.includes(null)) setRoundWinner('Hòa');
   };
 
-  // Chơi ván tiếp theo
   const nextRound = () => {
     setBoard(Array(9).fill(null));
     setRoundWinner(null);
     setIsPlayerTurn(true);
   };
 
-  // Reset toàn bộ giải đấu
   const resetMatch = () => {
     setBoard(Array(9).fill(null));
     setRoundWinner(null);
@@ -127,11 +155,10 @@ const TicTacToeBO3 = () => {
         {/* Bàn cờ 3x3 */}
         <div className="p-4 bg-pink-50/50 relative min-h-[300px] flex items-center justify-center">
           
-          {/* --- MÀN HÌNH KẾT QUẢ (Ván đấu & Chung kết) --- */}
+          {/* MÀN HÌNH KẾT QUẢ */}
           {(roundWinner || gameWinner) && (
-            <div className="absolute inset-0 z-20 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center animate-fade-in">
+            <div className="absolute inset-0 z-20 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center animate-fade-in">
               {gameWinner ? (
-                // Giao diện VÔ ĐỊCH
                 <div className="animate-bounce-in">
                   <div className="text-6xl mb-2 animate-bounce">🏆</div>
                   <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-1">
@@ -140,24 +167,17 @@ const TicTacToeBO3 = () => {
                   <p className="text-gray-600 font-bold text-lg mb-6">
                     {gameWinner}
                   </p>
-                  <button 
-                    onClick={resetMatch} 
-                    className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold rounded-full shadow-lg hover:scale-105 transition transform"
-                  >
+                  <button onClick={resetMatch} className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold rounded-full shadow-lg hover:scale-105 transition transform">
                     Chơi giải mới 🎆
                   </button>
                 </div>
               ) : (
-                // Giao diện Thắng ván lẻ
                 <div>
-                  <div className="text-4xl mb-2">{roundWinner === 'Hòa' ? '🤝' : '✨'}</div>
+                  <div className="text-4xl mb-2">{roundWinner === 'Hòa' ? '🤝' : (roundWinner === '❤️' ? '😎' : '🤖')}</div>
                   <p className="text-gray-700 font-bold text-lg mb-4">
                     {roundWinner === 'Hòa' ? 'Hòa ván này!' : `${roundWinner === '❤️' ? 'Bạn' : 'Máy'} thắng ván này!`}
                   </p>
-                  <button 
-                    onClick={nextRound} 
-                    className="px-5 py-2 bg-pink-500 text-white rounded-full shadow hover:bg-pink-600 transition hover:scale-105"
-                  >
+                  <button onClick={nextRound} className="px-5 py-2 bg-pink-500 text-white rounded-full shadow hover:bg-pink-600 transition hover:scale-105">
                     Đấu ván tiếp theo ➡
                   </button>
                 </div>
@@ -189,7 +209,7 @@ const TicTacToeBO3 = () => {
         {/* Footer trạng thái */}
         {!gameWinner && !roundWinner && (
           <div className={`px-4 py-2 text-center text-xs font-medium transition-colors duration-300 ${isPlayerTurn ? 'bg-pink-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
-             {isPlayerTurn ? "👉 Đến lượt bạn (❤️)" : "🤖 Máy đang tính nước đi..."}
+             {isPlayerTurn ? "👉 Lượt của bạn (❤️)" : "🤖 Máy đang tính kế..."}
           </div>
         )}
       </div>
@@ -209,7 +229,7 @@ function App() {
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-indigo-100 overflow-x-hidden text-slate-800 font-sans">
       
-      {/* Hiệu ứng Pháo giấy (Luôn chạy làm nền) */}
+      {/* Hiệu ứng Pháo giấy */}
       <Confetti />
       
       <main className={`relative z-20 flex flex-col items-center justify-center min-h-screen p-4 transition-opacity duration-1000 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
@@ -241,11 +261,11 @@ function App() {
              {/* Khu vực Trò chơi */}
              <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col items-center">
                <p className="text-gray-500 italic font-script text-xl md:text-2xl mb-2">
-                 "Giải trí xíu nha: Thắng 2 ván nhận Cúp!" 👇
+                 "Bot này khôn lắm, thử thắng xem!" 👇
                </p>
                
-               {/* Component Game 3x3 BO3 */}
-               <TicTacToeBO3 />
+               {/* Component Game Smart */}
+               <TicTacToeSmart />
 
              </div>
           </div>
