@@ -8,7 +8,7 @@ const InlineMusicPlayer = () => {
 
   // ID Youtube bài: Không Yêu Em Thì Yêu Ai
   const YOUTUBE_ID = "D-yDpwqN3IQ"; 
-  const youtubeSrc = `https://www.youtube.com/embed/${YOUTUBE_ID}?autoplay=1&loop=1&playlist=${YOUTUBE_ID}&controls=0&showinfo=0`;
+  const youtubeSrc = `https://www.youtube.com/watch?v=o-2yt0ZZZ6o&list=RDo-2yt0ZZZ6o&start_radio=1`;
 
   return (
     <div className="w-full max-w-sm mx-auto mt-4">
