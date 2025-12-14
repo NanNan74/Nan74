@@ -13,105 +13,86 @@ const ParticleHeart: React.FC = () => {
     if (!ctx) return;
 
     // --- Configuration ---
-    const TOTAL_PARTICLES = 3000; // Đã nâng lên 3000 hạt
-    const HEART_COLOR = "#ff5ca8"; // Màu hồng chủ đạo
-    const HEART_COLOR_CORE = "#ff85c2"; // Màu lõi sáng hơn chút
+    const TOTAL_PARTICLES = 2500; // Giảm nhẹ xuống 2500 để mobile load nhanh hơn (không ảnh hưởng độ đẹp)
+    const HEART_COLOR = "#ff5ca8"; 
+    const HEART_COLOR_CORE = "#ff85c2"; 
     
-    // Arrays to store particle data
-    let particles: { x: number; y: number; size: number; color: string; velocity: {x: number, y: number}, basePos: {x: number, y: number} }[] = [];
+    let particles: { x: number; y: number; size: number; color: string; basePos: {x: number, y: number} }[] = [];
     let animationFrameId: number;
-    let time = 0;
 
     // --- Math Functions ---
-
-    // Hàm tạo dáng trái tim chuẩn
     const heartFunction = (t: number, scale: number) => {
       let x = 16 * Math.pow(Math.sin(t), 3);
       let y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
       return { x: x * scale, y: y * scale };
     };
 
-    // Hàm phân tán hạt vào trong (tạo độ dày) - dùng Logarit
     const scatterInside = (x: number, y: number, beta: number) => {
-      const ratio_x = -beta * Math.log(Math.random());
-      const ratio_y = -beta * Math.log(Math.random());
+      // Fix lỗi Math.log(0) = -Infinity gây lỗi hiển thị
+      let randomX = Math.random();
+      let randomY = Math.random();
+      // Đảm bảo không bao giờ log số 0
+      if (randomX === 0) randomX = 0.001;
+      if (randomY === 0) randomY = 0.001;
+
+      const ratio_x = -beta * Math.log(randomX);
+      const ratio_y = -beta * Math.log(randomY);
       
-      const dx = ratio_x * x;
-      const dy = ratio_y * y;
-      
-      return { x: x - dx, y: y - dy };
+      return { x: x - (ratio_x * x), y: y - (ratio_y * y) };
     };
 
     const initParticles = (width: number, height: number) => {
       particles = [];
-      // Tinh chỉnh scale dựa trên màn hình
+      if (width === 0 || height === 0) return; // Tránh lỗi chia cho 0
       const scale = Math.min(width, height) / 45; 
 
-      // Tạo hạt
       for (let i = 0; i < TOTAL_PARTICLES; i++) {
         const t = Math.random() * Math.PI * 2;
         const pos = heartFunction(t, scale);
         
-        // Phân loại hạt để tạo hiệu ứng 3D
         let finalX = pos.x;
         let finalY = pos.y;
-        let size = Math.random() * 1.5 + 0.5; // Kích thước hạt từ 0.5 đến 2px
+        let size = Math.random() * 1.5 + 0.5;
         let color = HEART_COLOR;
 
         const randomVal = Math.random();
 
-        if (randomVal < 0.15) {
-            // 15% hạt: Viền sắc nét
-        } else if (randomVal < 0.7) {
-            // 55% hạt: Phân tán vào trong (tạo body)
+        if (randomVal >= 0.15 && randomVal < 0.7) {
             const scattered = scatterInside(pos.x, pos.y, 0.15); 
             finalX = scattered.x;
             finalY = scattered.y;
-            size = Math.random() * 1.2; // Hạt bên trong nhỏ hơn chút cho mịn
-        } else {
-            // 30% hạt: Halo mờ ảo
+            size = Math.random() * 1.2;
+        } else if (randomVal >= 0.7) {
             const scattered = scatterInside(pos.x, pos.y, 0.25);
             finalX = scattered.x;
             finalY = scattered.y;
             color = HEART_COLOR_CORE;
-            size = Math.random() * 0.8 + 0.2; // Hạt halo nhỏ li ti
+            size = Math.random() * 0.8 + 0.2;
         }
 
         particles.push({
           x: finalX,
           y: finalY,
-          basePos: { x: finalX, y: finalY }, // Lưu vị trí gốc (tương đối so với tâm)
+          basePos: { x: finalX, y: finalY },
           size: size,
           color: color,
-          velocity: { x: 0, y: 0 }
         });
       }
     };
 
     const render = () => {
       if (!ctx || !canvas) return;
-      
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
 
-      // Nhịp tim
-      // Sử dụng công thức mô phỏng nhịp tim thực tế
       const t = Date.now() / 1000;
-      const beat = 1 + 0.08 * (
-          Math.sin(t * 3) * 0.5 + 
-          Math.sin(t * 6) * 0.1
-      );
+      const beat = 1 + 0.08 * (Math.sin(t * 3) * 0.5 + Math.sin(t * 6) * 0.1);
 
       particles.forEach(p => {
-        // Vị trí hiện tại = Vị trí gốc * độ phóng đại của nhịp tim
         const currentX = centerX + p.basePos.x * beat;
         const currentY = centerY + p.basePos.y * beat;
-
         ctx.fillStyle = p.color;
-        
-        // Vẽ hình vuông tối ưu hiệu năng
         ctx.fillRect(currentX, currentY, p.size, p.size);
       });
 
@@ -119,16 +100,22 @@ const ParticleHeart: React.FC = () => {
     };
 
     const handleResize = () => {
-      canvas.width = container.clientWidth;
-      canvas.height = container.clientHeight;
-      initParticles(canvas.width, canvas.height);
+      if (container && canvas) {
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        initParticles(canvas.width, canvas.height);
+      }
     };
 
+    // Khởi tạo
     handleResize();
-    const resizeObserver = new ResizeObserver(handleResize);
-    resizeObserver.observe(container);
-
     render();
+
+    // Observer resize
+    const resizeObserver = new ResizeObserver(() => {
+        handleResize();
+    });
+    resizeObserver.observe(container);
 
     return () => {
       resizeObserver.disconnect();
