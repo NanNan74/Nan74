@@ -2,32 +2,40 @@ import React, { useState, useEffect } from 'react';
 import Confetti from './components/Confetti';
 import ParticleHeart from './components/ParticleHeart';
 
-// --- COMPONENT NHẠC (Giao diện hiển thị Video rõ ràng - Ổn định nhất) ---
+// --- COMPONENT NHẠC (Cố định bài hát - Tự động lặp lại) ---
 const VisibleMusicPlayer = () => {
   // ID Youtube bài: Không Yêu Em Thì Yêu Ai
+  // Đây là link cứng, không thay đổi.
   const YOUTUBE_ID = "D-yDpwqN3IQ"; 
-  const youtubeSrc = `https://www.youtube.com/embed/${YOUTUBE_ID}?autoplay=1&loop=1&playlist=${YOUTUBE_ID}&controls=1&showinfo=0&modestbranding=1`;
+  
+  // Các tham số quan trọng:
+  // loop=1 & playlist=ID: Để khi hết bài nó tự phát lại chính bài này.
+  // rel=0: Không hiện video gợi ý của kênh khác.
+  const youtubeSrc = `https://www.youtube.com/embed/${YOUTUBE_ID}?autoplay=1&loop=1&playlist=${YOUTUBE_ID}&controls=1&showinfo=0&modestbranding=1&rel=0`;
 
   return (
-    <div className="w-full max-w-[320px] mx-auto mt-4">
-      {/* Khung bao ngoài giống giao diện Widget */}
-      <div className="bg-white rounded-2xl shadow-xl border border-pink-100 overflow-hidden transform transition-all hover:scale-105 duration-300">
+    <div className="w-full max-w-[340px] mx-auto mt-4">
+      {/* Khung giao diện Player */}
+      <div className="bg-white rounded-2xl shadow-xl border border-pink-200 overflow-hidden">
         
-        {/* Phần Tiêu đề: NHẠC NỀN */}
-        <div className="px-4 py-2 bg-gradient-to-r from-pink-50 to-white flex items-center justify-between border-b border-pink-100">
+        {/* Header Player */}
+        <div className="px-4 py-2.5 bg-gradient-to-r from-pink-50 to-white flex items-center justify-between border-b border-pink-100">
           <div className="flex items-center gap-2">
-            <span className="text-pink-500 animate-pulse">📛</span>
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Nhạc Nền</span>
+            <span className="text-pink-500 animate-pulse">💿</span>
+            <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+              Now Playing
+            </span>
           </div>
-          <div className="flex gap-1">
-             <div className="w-2 h-2 rounded-full bg-red-400"></div>
-             <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
-             <div className="w-2 h-2 rounded-full bg-green-400"></div>
+          {/* 3 chấm trang trí */}
+          <div className="flex gap-1.5 opacity-50">
+             <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
+             <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
+             <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
           </div>
         </div>
 
-        {/* Video Youtube hiển thị rõ ràng */}
-        <div className="relative w-full aspect-video bg-black">
+        {/* Video Youtube Hiển Thị Rõ Ràng */}
+        <div className="relative w-full aspect-video bg-black group">
           <iframe 
             width="100%" 
             height="100%" 
@@ -36,14 +44,23 @@ const VisibleMusicPlayer = () => {
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
             allowFullScreen
+            className="group-hover:opacity-100 transition-opacity"
           />
         </div>
 
-        {/* Chân trang nhỏ */}
-        <div className="px-4 py-2 bg-white text-center">
-           <p className="text-[10px] text-gray-400 font-light italic">
-             (Vũ. feat Low G)
+        {/* Thông tin bài hát cố định */}
+        <div className="px-4 py-3 bg-white flex flex-col items-start gap-1">
+           <h3 className="text-sm font-bold text-gray-800 leading-none">
+             Không Yêu Em Thì Yêu Ai
+           </h3>
+           <p className="text-xs text-pink-500 font-medium">
+             Vũ. feat Low G
            </p>
+           
+           {/* Thanh tiến trình giả (Trang trí cho đẹp) */}
+           <div className="w-full h-1 bg-gray-100 rounded-full mt-2 overflow-hidden">
+             <div className="h-full bg-pink-400 w-1/3 animate-pulse"></div>
+           </div>
         </div>
       </div>
     </div>
@@ -91,13 +108,13 @@ function App() {
                 ❤️ Phiếu bầu của bạn đã được ghi nhận
              </div>
              
-             {/* Component Nhạc Nằm Gọn Ở Đây */}
+             {/* Khu vực Nhạc */}
              <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col items-center">
                <p className="text-gray-500 italic font-script text-xl md:text-2xl mb-4">
                  "Cả nhà nghe bài hát này thư giãn nhé iu" 🎵
                </p>
                
-               {/* Khung nhạc hiển thị giống trong ảnh */}
+               {/* Component Nhạc Cố Định */}
                <VisibleMusicPlayer />
 
              </div>
