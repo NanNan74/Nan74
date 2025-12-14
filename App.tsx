@@ -26,7 +26,7 @@ function App() {
         <div className="bg-white/80 backdrop-blur-md shadow-2xl rounded-3xl p-6 md:p-10 max-w-4xl w-full text-center border border-white/50 relative overflow-hidden">
           
           <h1 className="font-script text-4xl md:text-5xl lg:text-6xl bg-gradient-to-r from-pink-600 to-violet-600 bg-clip-text text-transparent mb-4 leading-tight">
-            Cảm ơn cả nhà đã ủng hộ tym, comment, share cho Slầy Gơ ạaaa
+            Cảm ơn cả nhà đã ủng hộ tym, comment, share cho Slầy Gơ ạaaa ❤️
           </h1>
           
           <p className="text-pink-500 font-bold text-xl md:text-2xl tracking-wider mb-2 animate-pulse">
@@ -49,7 +49,7 @@ function App() {
              
              <div className="mt-6 pt-4 border-t border-gray-100">
                <p className="text-gray-500 italic font-script text-xl md:text-2xl">
-                 "Cả nhà nghe bài hát này thay lời Như gửi nhé iu" 🎵
+                 "Cả nhà nghe bài hát này thư giãn nhé iu" 🎵
                </p>
                <p className="text-xs text-gray-400 mt-4">
                 
