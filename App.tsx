@@ -26,7 +26,7 @@ function App() {
         <div className="bg-white/80 backdrop-blur-md shadow-2xl rounded-3xl p-6 md:p-10 max-w-4xl w-full text-center border border-white/50 relative overflow-hidden">
           
           <h1 className="font-script text-4xl md:text-5xl lg:text-6xl bg-gradient-to-r from-pink-600 to-violet-600 bg-clip-text text-transparent mb-4 leading-tight">
-            Cảm ơn cả nhà đã ủng hộ tym, comment, share cho SLầy Gơ ạaaa
+            Cảm ơn cả nhà đã ủng hộ tym, comment, share cho Slầy Gơ ạaaa
           </h1>
           
           <p className="text-pink-500 font-bold text-xl md:text-2xl tracking-wider mb-2 animate-pulse">
@@ -39,7 +39,7 @@ function App() {
           </div>
 
           <p className="text-lg md:text-xl text-gray-700 font-medium leading-relaxed mb-6 mt-4">
-            Chúc cả nhà nhiều sức khỏe, nhiều may mắn ngập tràn ạaaa
+            Chúc cả nhà nhiều sức khỏe, ngập tràn may mắn và nhiều điều tốt lành ạaaa
           </p>
 
           <div className="space-y-4">
@@ -52,7 +52,7 @@ function App() {
                  "Cả nhà nghe bài hát này thay lời Như gửi nhé iu" 🎵
                </p>
                <p className="text-xs text-gray-400 mt-4">
-                 © 2024 Event Voting System
+                
                </p>
              </div>
           </div>
