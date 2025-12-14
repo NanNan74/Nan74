@@ -1,26 +1,44 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Confetti from './components/Confetti';
 import ParticleHeart from './components/ParticleHeart';
 
-// --- COMPONENT NHẠC (Đã đổi ID sang bản Fan-made để không bị chặn) ---
+// --- COMPONENT NHẠC MP3 (Chạy link trực tiếp - Không lo bản quyền Youtube) ---
 const VisibleMusicPlayer = () => {
-  // ID MỚI: Bản Lyrics Fan-made (Thường không bị chặn bản quyền khi nhúng)
-  // ID cũ bị chặn, ID này là: tqV_2v7X0jM
-  const YOUTUBE_ID = "tqV_2v7X0jM"; 
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Link nhạc MP3 trực tiếp (Online)
+  const MUSIC_URL = "https://raw.githubusercontent.com/loi-nguyen-code/music-player/main/assets/music/KhongYeuEmThiYeuAi.mp3";
   
-  const youtubeSrc = `https://www.youtube.com/embed/${YOUTUBE_ID}?autoplay=1&loop=1&playlist=${YOUTUBE_ID}&controls=1&showinfo=0&modestbranding=1&rel=0&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`;
+  // Link Ảnh bìa Album (Lấy từ thumbnail Youtube cho đẹp)
+  const ALBUM_COVER = "https://i.ytimg.com/vi/D-yDpwqN3IQ/maxresdefault.jpg";
+
+  // Xử lý khi bấm nút Play/Pause
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
 
   return (
     <div className="w-full max-w-[340px] mx-auto mt-4">
+      {/* Thẻ Audio ẩn (Core xử lý nhạc) */}
+      <audio ref={audioRef} src={MUSIC_URL} loop />
+
       {/* Khung giao diện Player */}
       <div className="bg-white rounded-2xl shadow-xl border border-pink-200 overflow-hidden transform transition-all hover:shadow-2xl duration-300">
         
         {/* Header Player */}
         <div className="px-4 py-2.5 bg-gradient-to-r from-pink-50 to-white flex items-center justify-between border-b border-pink-100">
           <div className="flex items-center gap-2">
-            <span className="text-pink-500 animate-spin-slow text-lg">💿</span>
+            <span className={`text-pink-500 text-lg ${isPlaying ? 'animate-spin-slow' : ''}`}>💿</span>
             <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-              Now Playing
+              {isPlaying ? 'Now Playing' : 'Music Player'}
             </span>
           </div>
           <div className="flex gap-1.5 opacity-50">
@@ -30,22 +48,32 @@ const VisibleMusicPlayer = () => {
           </div>
         </div>
 
-        {/* Video Youtube */}
-        <div className="relative w-full aspect-video bg-black group">
-          <iframe 
-            width="100%" 
-            height="100%" 
-            src={youtubeSrc} 
-            title="Music Player" 
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-            allowFullScreen
-            className="group-hover:opacity-100 transition-opacity"
+        {/* Khu vực Ảnh bìa & Nút Play trung tâm */}
+        <div className="relative w-full aspect-video group cursor-pointer" onClick={togglePlay}>
+          {/* Ảnh bìa */}
+          <img 
+            src={ALBUM_COVER} 
+            alt="Album Cover" 
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
+          
+          {/* Lớp phủ đen mờ */}
+          <div className={`absolute inset-0 bg-black/30 transition-opacity duration-300 ${isPlaying ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}></div>
+
+          {/* Nút Play to ở giữa */}
+          <div className={`absolute inset-0 flex items-center justify-center transition-transform duration-300 ${isPlaying ? 'scale-0 group-hover:scale-100' : 'scale-100'}`}>
+            <div className="w-14 h-14 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all">
+               {isPlaying ? (
+                 <span className="text-pink-600 text-2xl font-bold ml-0.5">⏸</span>
+               ) : (
+                 <span className="text-pink-600 text-2xl font-bold ml-1">▶</span>
+               )}
+            </div>
+          </div>
         </div>
 
-        {/* Thông tin bài hát */}
-        <div className="px-4 py-3 bg-white flex flex-col items-start gap-1">
+        {/* Thông tin bài hát & Thanh chạy */}
+        <div className="px-4 py-3 bg-white flex flex-col items-start gap-1 relative">
            <h3 className="text-sm font-bold text-gray-800 leading-none">
              Không Yêu Em Thì Yêu Ai
            </h3>
@@ -53,9 +81,9 @@ const VisibleMusicPlayer = () => {
              Vũ. feat Low G
            </p>
            
-           {/* Thanh tiến trình giả */}
-           <div className="w-full h-1 bg-gray-100 rounded-full mt-2 overflow-hidden">
-             <div className="h-full bg-pink-400 w-1/3 animate-pulse"></div>
+           {/* Thanh tiến trình giả lập */}
+           <div className="w-full h-1 bg-gray-100 rounded-full mt-3 overflow-hidden relative">
+             <div className={`h-full bg-gradient-to-r from-pink-400 to-purple-400 absolute top-0 left-0 rounded-full ${isPlaying ? 'animate-width-grow' : 'w-0'}`}></div>
            </div>
         </div>
       </div>
@@ -75,6 +103,7 @@ function App() {
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-indigo-100 overflow-x-hidden text-slate-800 font-sans">
       
+      {/* Hiệu ứng */}
       <Confetti />
       
       <main className={`relative z-20 flex flex-col items-center justify-center min-h-screen p-4 transition-opacity duration-1000 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
@@ -109,7 +138,7 @@ function App() {
                  "Cả nhà nghe bài hát này thư giãn nhé iu" 🎵
                </p>
                
-               {/* Component Nhạc */}
+               {/* Component Nhạc Cố Định */}
                <VisibleMusicPlayer />
 
              </div>
@@ -135,6 +164,13 @@ if (typeof document !== 'undefined') {
     }
     .animate-spin-slow {
       animation: spin-slow 4s linear infinite;
+    }
+    @keyframes width-grow {
+      from { width: 0%; }
+      to { width: 100%; }
+    }
+    .animate-width-grow {
+      animation: width-grow 200s linear forwards; 
     }
   `;
   const styleSheet = document.createElement("style");
