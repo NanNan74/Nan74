@@ -26,7 +26,7 @@ function App() {
         <div className="bg-white/80 backdrop-blur-md shadow-2xl rounded-3xl p-6 md:p-10 max-w-4xl w-full text-center border border-white/50 relative overflow-hidden">
           
           <h1 className="font-script text-4xl md:text-5xl lg:text-6xl bg-gradient-to-r from-pink-600 to-violet-600 bg-clip-text text-transparent mb-4 leading-tight">
-            Cảm ơn cả nhà đã ủng hộ tym, comment, share cho nhóm Slầy Gơ ạaa ❤️
+            Cảm ơn cả nhà đã ủng hộ tym, comment, share cho Slầy Gơ ạaa ❤️
             
           </h1>
           
