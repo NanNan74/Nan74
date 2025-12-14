@@ -31,6 +31,7 @@ function App() {
           </h1>
           
           <p className="text-pink-500 font-bold text-xl md:text-2xl tracking-wider mb-2 animate-pulse">
+            
             #STEM FOR EARTH
           </p>
 
