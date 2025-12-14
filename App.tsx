@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Confetti from './components/Confetti';
 import ParticleHeart from './components/ParticleHeart';
 
-// --- COMPONENT GAME CARO 3x3 (SMART BOT - BIẾT CHẶN) ---
+// --- COMPONENT GAME CARO 3x3 (SMART BOT - ĐỔI LƯỢT ĐI TRƯỚC) ---
 const TicTacToeSmart = () => {
   const WIN_SERIES = 2; // Thắng 2 ván là Vô Địch
 
@@ -11,6 +11,9 @@ const TicTacToeSmart = () => {
   const [roundWinner, setRoundWinner] = useState<string | null>(null);
   const [gameWinner, setGameWinner] = useState<string | null>(null);
   const [scores, setScores] = useState({ player: 0, bot: 0 });
+  
+  // State mới: Theo dõi ai là người đi trước ở ván hiện tại
+  const [playerStarts, setPlayerStarts] = useState(true); 
 
   // Các đường thắng
   const WINNING_LINES = [
@@ -42,34 +45,28 @@ const TicTacToeSmart = () => {
 
   // --- TRÍ TUỆ NHÂN TẠO CỦA BOT ---
   const getSmartMove = (currentBoard: any[]) => {
-    // 1. ƯU TIÊN THẮNG: Tìm xem Bot có cơ hội thắng ngay không (2 ô O)
+    // 1. ƯU TIÊN THẮNG
     for (let line of WINNING_LINES) {
       const [a, b, c] = line;
       const values = [currentBoard[a], currentBoard[b], currentBoard[c]];
       const botCount = values.filter(v => v === '⭕').length;
       const emptyCount = values.filter(v => v === null).length;
-      
-      if (botCount === 2 && emptyCount === 1) {
-        return line[values.indexOf(null)]; // Đánh vào ô trống để thắng
-      }
+      if (botCount === 2 && emptyCount === 1) return line[values.indexOf(null)];
     }
 
-    // 2. ƯU TIÊN CHẶN: Tìm xem Người chơi sắp thắng không (2 ô Tim)
+    // 2. ƯU TIÊN CHẶN
     for (let line of WINNING_LINES) {
       const [a, b, c] = line;
       const values = [currentBoard[a], currentBoard[b], currentBoard[c]];
       const playerCount = values.filter(v => v === '❤️').length;
       const emptyCount = values.filter(v => v === null).length;
-      
-      if (playerCount === 2 && emptyCount === 1) {
-        return line[values.indexOf(null)]; // Chặn ngay
-      }
+      if (playerCount === 2 && emptyCount === 1) return line[values.indexOf(null)];
     }
 
-    // 3. ƯU TIÊN GIỮA: Nếu ô giữa trống, chiếm ngay (chiến thuật tốt nhất)
+    // 3. ƯU TIÊN GIỮA (Nếu đi đầu hoặc chưa ai chiếm)
     if (currentBoard[4] === null) return 4;
 
-    // 4. ĐI NGẪU NHIÊN: Nếu không rơi vào các trường hợp trên
+    // 4. ĐI NGẪU NHIÊN
     const emptyIndices = currentBoard.map((val, idx) => val === null ? idx : null).filter(val => val !== null);
     if (emptyIndices.length > 0) {
       return emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
@@ -77,11 +74,10 @@ const TicTacToeSmart = () => {
     return null;
   };
 
-  // --- EFFECT CHO BOT ---
+  // --- BOT LOGIC (Tự động đi khi đến lượt) ---
   useEffect(() => {
     if (!isPlayerTurn && !roundWinner && !gameWinner) {
       const timer = setTimeout(() => {
-        // Gọi hàm Bot thông minh
         const moveIndex = getSmartMove(board);
         
         if (moveIndex !== null) {
@@ -94,12 +90,12 @@ const TicTacToeSmart = () => {
           else if (!newBoard.includes(null)) setRoundWinner('Hòa');
           else setIsPlayerTurn(true);
         }
-      }, 700); // Tăng delay lên 0.7s giả vờ suy nghĩ kỹ hơn
+      }, 700); // Delay 0.7s
       return () => clearTimeout(timer);
     }
   }, [isPlayerTurn, roundWinner, gameWinner, board]);
 
-  // --- PLAYER ---
+  // --- PLAYER MOVE ---
   const handlePlayerClick = (index: number) => {
     if (board[index] || roundWinner || gameWinner || !isPlayerTurn) return;
 
@@ -113,17 +109,25 @@ const TicTacToeSmart = () => {
     else if (!newBoard.includes(null)) setRoundWinner('Hòa');
   };
 
+  // --- CHUYỂN VÁN (ĐỔI LƯỢT ĐI TRƯỚC) ---
   const nextRound = () => {
     setBoard(Array(9).fill(null));
     setRoundWinner(null);
-    setIsPlayerTurn(true);
+    
+    // Đảo ngược người đi trước
+    const nextRoundStarter = !playerStarts;
+    setPlayerStarts(nextRoundStarter); // Lưu lại cho ván sau nữa
+    setIsPlayerTurn(nextRoundStarter); // Set lượt hiện tại
   };
 
+  // --- RESET GAME ---
   const resetMatch = () => {
     setBoard(Array(9).fill(null));
     setRoundWinner(null);
     setGameWinner(null);
     setScores({ player: 0, bot: 0 });
+    
+    setPlayerStarts(true); // Reset về mặc định: Bạn đi trước
     setIsPlayerTurn(true);
   };
 
@@ -135,7 +139,7 @@ const TicTacToeSmart = () => {
         <div className="px-4 py-3 bg-gradient-to-r from-pink-100 to-white border-b border-pink-100">
           <div className="flex justify-between items-center mb-1">
              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-               Bo3 - Chạm {WIN_SERIES} là Vô Địch
+               Bo3 - Ai thắng 2 là Vô Địch
              </span>
              <button onClick={resetMatch} className="text-[10px] bg-white border border-pink-200 px-2 py-0.5 rounded hover:bg-pink-50 text-gray-400">
                 Reset
@@ -174,8 +178,11 @@ const TicTacToeSmart = () => {
               ) : (
                 <div>
                   <div className="text-4xl mb-2">{roundWinner === 'Hòa' ? '🤝' : (roundWinner === '❤️' ? '😎' : '🤖')}</div>
-                  <p className="text-gray-700 font-bold text-lg mb-4">
-                    {roundWinner === 'Hòa' ? 'Hòa ván này!' : `${roundWinner === '❤️' ? 'Bạn' : 'Máy'} thắng ván này!`}
+                  <p className="text-gray-700 font-bold text-lg mb-1">
+                    {roundWinner === 'Hòa' ? 'Ván này Hòa!' : `${roundWinner === '❤️' ? 'Bạn' : 'Máy'} thắng ván này!`}
+                  </p>
+                  <p className="text-xs text-gray-400 mb-4 italic">
+                    (Ván sau {playerStarts ? 'Máy' : 'Bạn'} sẽ đi trước)
                   </p>
                   <button onClick={nextRound} className="px-5 py-2 bg-pink-500 text-white rounded-full shadow hover:bg-pink-600 transition hover:scale-105">
                     Đấu ván tiếp theo ➡
@@ -261,10 +268,10 @@ function App() {
              {/* Khu vực Trò chơi */}
              <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col items-center">
                <p className="text-gray-500 italic font-script text-xl md:text-2xl mb-2">
-                 "Cả nhà có thể giải trí bằng trò caro này ạ, hoan hỉ cho Như nếu cả nhà chơi xong hơm thấy giải trí hhehe" 😄
+                 "Bot này khôn lắm, thử thắng xem!" 👇
                </p>
                
-               {/* Component Game Smart */}
+               {/* Component Game Smart + Đổi lượt */}
                <TicTacToeSmart />
 
              </div>
