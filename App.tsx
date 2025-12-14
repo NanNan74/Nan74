@@ -2,15 +2,12 @@ import React, { useState, useEffect } from 'react';
 import Confetti from './components/Confetti';
 import ParticleHeart from './components/ParticleHeart';
 
-// --- COMPONENT NHẠC (Sử dụng Link Lyric Video để không bị chặn) ---
+// --- COMPONENT NHẠC (Đã đổi ID sang bản Fan-made để không bị chặn) ---
 const VisibleMusicPlayer = () => {
-  // ID Youtube MỚI: c1sL-7f1gq4 (Bản Lyrics - Cho phép nhúng trên mọi web)
-  const YOUTUBE_ID = "c1sL-7f1gq4"; 
+  // ID MỚI: Bản Lyrics Fan-made (Thường không bị chặn bản quyền khi nhúng)
+  // ID cũ bị chặn, ID này là: tqV_2v7X0jM
+  const YOUTUBE_ID = "tqV_2v7X0jM"; 
   
-  // Tạo link Youtube chuẩn:
-  // autoplay=1: Tự phát
-  // loop=1 & playlist=ID: Tự động lặp lại bài này khi hết
-  // origin: Giúp xác thực tên miền để tránh lỗi chặn
   const youtubeSrc = `https://www.youtube.com/embed/${YOUTUBE_ID}?autoplay=1&loop=1&playlist=${YOUTUBE_ID}&controls=1&showinfo=0&modestbranding=1&rel=0&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`;
 
   return (
@@ -26,7 +23,6 @@ const VisibleMusicPlayer = () => {
               Now Playing
             </span>
           </div>
-          {/* 3 chấm trang trí */}
           <div className="flex gap-1.5 opacity-50">
              <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
              <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
@@ -34,7 +30,7 @@ const VisibleMusicPlayer = () => {
           </div>
         </div>
 
-        {/* Video Youtube Hiển Thị Rõ Ràng */}
+        {/* Video Youtube */}
         <div className="relative w-full aspect-video bg-black group">
           <iframe 
             width="100%" 
@@ -48,7 +44,7 @@ const VisibleMusicPlayer = () => {
           />
         </div>
 
-        {/* Thông tin bài hát cố định */}
+        {/* Thông tin bài hát */}
         <div className="px-4 py-3 bg-white flex flex-col items-start gap-1">
            <h3 className="text-sm font-bold text-gray-800 leading-none">
              Không Yêu Em Thì Yêu Ai
@@ -57,7 +53,7 @@ const VisibleMusicPlayer = () => {
              Vũ. feat Low G
            </p>
            
-           {/* Thanh tiến trình giả (Trang trí cho đẹp) */}
+           {/* Thanh tiến trình giả */}
            <div className="w-full h-1 bg-gray-100 rounded-full mt-2 overflow-hidden">
              <div className="h-full bg-pink-400 w-1/3 animate-pulse"></div>
            </div>
@@ -79,7 +75,6 @@ function App() {
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-indigo-100 overflow-x-hidden text-slate-800 font-sans">
       
-      {/* Hiệu ứng */}
       <Confetti />
       
       <main className={`relative z-20 flex flex-col items-center justify-center min-h-screen p-4 transition-opacity duration-1000 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
@@ -114,7 +109,7 @@ function App() {
                  "Cả nhà nghe bài hát này thư giãn nhé iu" 🎵
                </p>
                
-               {/* Component Nhạc Cố Định */}
+               {/* Component Nhạc */}
                <VisibleMusicPlayer />
 
              </div>
