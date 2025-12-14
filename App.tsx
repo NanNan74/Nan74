@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Confetti from './components/Confetti';
 import ParticleHeart from './components/ParticleHeart';
 
-// --- COMPONENT NHẠC NẰM TRONG KHUNG ---
+// --- COMPONENT NHẠC NẰM TRONG KHUNG (Inline Player) ---
 const InlineMusicPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -11,12 +11,12 @@ const InlineMusicPlayer = () => {
   const youtubeSrc = `https://www.youtube.com/embed/${YOUTUBE_ID}?autoplay=1&loop=1&playlist=${YOUTUBE_ID}&controls=0&showinfo=0`;
 
   return (
-    <div className="w-full max-w-sm mx-auto mt-2">
-      {/* Thanh phát nhạc giao diện Spotify/Apple Music nhỏ gọn */}
-      <div className={`relative overflow-hidden rounded-2xl border transition-all duration-500 ${isPlaying ? 'bg-pink-50 border-pink-200 shadow-inner' : 'bg-white border-gray-100 shadow-sm'}`}>
+    <div className="w-full max-w-sm mx-auto mt-4">
+      {/* Khung phát nhạc giao diện Spotify Mini */}
+      <div className={`relative overflow-hidden rounded-xl border transition-all duration-500 ${isPlaying ? 'bg-pink-50 border-pink-200 shadow-inner' : 'bg-white border-gray-100 shadow-sm'}`}>
         
         <div className="flex items-center p-3 gap-3">
-          {/* Nút Play/Pause (Hình đĩa than) */}
+          {/* Nút Play/Pause (Đĩa than quay) */}
           <button 
             onClick={() => setIsPlaying(!isPlaying)}
             className="relative w-12 h-12 flex-shrink-0 group focus:outline-none"
@@ -54,13 +54,13 @@ const InlineMusicPlayer = () => {
           </div>
         </div>
 
-        {/* Thanh tiến trình giả (trang trí) */}
+        {/* Thanh tiến trình chạy (trang trí) */}
         {isPlaying && (
            <div className="absolute bottom-0 left-0 h-0.5 bg-pink-500 animate-[width_180s_linear_forwards]" style={{width: '0%'}}></div>
         )}
       </div>
 
-      {/* Iframe Youtube ẩn (Kỹ thuật đẩy ra khỏi màn hình để trình duyệt không chặn) */}
+      {/* Iframe Youtube ẩn (Đẩy ra xa màn hình để ko bị chặn) */}
       {isPlaying && (
         <div style={{ position: 'fixed', left: '-9999px', top: '-9999px' }}>
           <iframe 
@@ -74,10 +74,10 @@ const InlineMusicPlayer = () => {
         </div>
       )}
 
-      {/* Hướng dẫn nhỏ nếu chưa bật */}
+      {/* Dòng nhắc nhở nhỏ */}
       {!isPlaying && (
-        <p className="text-[10px] text-gray-400 mt-2 text-center animate-pulse">
-          (Bấm vào đĩa than để phát nhạc nha)
+        <p className="text-[10px] text-gray-400 mt-2 text-center italic animate-pulse">
+          (Bấm vào đĩa than để nhạc lên nha)
         </p>
       )}
     </div>
@@ -89,7 +89,6 @@ function App() {
   const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
-    // Fade in effect
     const timer = setTimeout(() => setShowContent(true), 100);
     return () => clearTimeout(timer);
   }, []);
@@ -128,15 +127,14 @@ function App() {
                 ❤️ Phiếu bầu của bạn đã được ghi nhận
              </div>
              
-             {/* --- PHẦN CHÂN TRANG & NHẠC --- */}
+             {/* --- PHẦN CUỐI CÙNG: Lời nhắn & Nhạc --- */}
              <div className="mt-6 pt-4 border-t border-gray-100">
-               <p className="text-gray-500 italic font-script text-xl md:text-2xl mb-4">
+               <p className="text-gray-500 italic font-script text-xl md:text-2xl mb-2">
                  "Cả nhà nghe bài hát này thư giãn nhé iu" 🎵
                </p>
                
-               {/* Component Nhạc đã được gắn vào đây */}
+               {/* Component Nhạc nằm ở đây */}
                <InlineMusicPlayer />
-               
              </div>
           </div>
 
@@ -151,7 +149,7 @@ function App() {
   );
 }
 
-// Style CSS cho thanh nhạc nhảy nhảy
+// Style CSS cho thanh nhạc
 const styles = `
   @keyframes music-bar {
     0%, 100% { height: 4px; }
