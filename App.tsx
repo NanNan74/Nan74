@@ -2,159 +2,133 @@ import React, { useState, useEffect } from 'react';
 import Confetti from './components/Confetti';
 import ParticleHeart from './components/ParticleHeart';
 
-// --- COMPONENT GAME CARO 5x5 (LUẬT: NỐI 3 LÀ THẮNG, BO3) ---
-const CaroGame = () => {
-  const SIZE = 5; // Bàn cờ 5x5
-  const WIN_CONDITION = 3; // Nối 3 con là thắng vòng
-  const WIN_SERIES = 2; // Thắng 2 ván là thắng chung cuộc
+// --- COMPONENT GAME CARO 3x3 (Chuẩn lượt đi - Bot 0.6s) ---
+const TicTacToe = () => {
+  const [board, setBoard] = useState(Array(9).fill(null));
+  const [isPlayerTurn, setIsPlayerTurn] = useState(true); // True: Lượt người, False: Lượt máy
+  const [winner, setWinner] = useState<string | null>(null);
 
-  const [board, setBoard] = useState(Array(SIZE * SIZE).fill(null));
-  const [isPlayerTurn, setIsPlayerTurn] = useState(true); // Player là ❤️
-  const [roundWinner, setRoundWinner] = useState<string | null>(null);
-  const [scores, setScores] = useState({ player: 0, bot: 0 });
-  const [gameWinner, setGameWinner] = useState<string | null>(null);
-
-  // Logic kiểm tra thắng (Nối 3 ô liên tiếp)
-  const checkWinCondition = (currentBoard: any[]) => {
-    const getCell = (r: number, c: number) => currentBoard[r * SIZE + c];
-
-    for (let r = 0; r < SIZE; r++) {
-      for (let c = 0; c < SIZE; c++) {
-        const val = getCell(r, c);
-        if (!val) continue;
-
-        // Check Ngang (Right)
-        if (c + 2 < SIZE && val === getCell(r, c + 1) && val === getCell(r, c + 2)) return val;
-        // Check Dọc (Down)
-        if (r + 2 < SIZE && val === getCell(r + 1, c) && val === getCell(r + 2, c)) return val;
-        // Check Chéo Phải (Diagonal Right)
-        if (r + 2 < SIZE && c + 2 < SIZE && val === getCell(r + 1, c + 1) && val === getCell(r + 2, c + 2)) return val;
-        // Check Chéo Trái (Diagonal Left)
-        if (r + 2 < SIZE && c - 2 >= 0 && val === getCell(r + 1, c - 1) && val === getCell(r + 2, c - 2)) return val;
+  // Logic kiểm tra người thắng (3 ô thẳng hàng)
+  const checkWinner = (squares: any[]) => {
+    const lines = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8], // Ngang
+      [0, 3, 6], [1, 4, 7], [2, 5, 8], // Dọc
+      [0, 4, 8], [2, 4, 6]             // Chéo
+    ];
+    for (let i = 0; i < lines.length; i++) {
+      const [a, b, c] = lines[i];
+      if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+        return squares[a];
       }
     }
     return null;
   };
 
-  // Bot tự động đi sau 1 giây
+  // --- LOGIC CỦA BOT ---
   useEffect(() => {
-    if (!isPlayerTurn && !roundWinner && !gameWinner && board.includes(null)) {
+    // Chỉ chạy khi không phải lượt người chơi VÀ chưa có ai thắng
+    if (!isPlayerTurn && !winner) {
       const timer = setTimeout(() => {
-        // Bot logic đơn giản: Chọn ngẫu nhiên ô trống
+        // 1. Tìm tất cả ô trống
         const emptyIndices = board.map((val, idx) => val === null ? idx : null).filter(val => val !== null);
+        
         if (emptyIndices.length > 0) {
+          // 2. Chọn ngẫu nhiên 1 ô
           const randomIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+          
           if (randomIndex !== null && randomIndex !== undefined) {
-             handleMove(randomIndex, false); 
+            // 3. Máy đi
+            const newBoard = [...board];
+            newBoard[randomIndex] = '⭕'; // Máy là O
+            setBoard(newBoard);
+            
+            // 4. Kiểm tra thắng thua sau khi máy đi
+            const w = checkWinner(newBoard);
+            if (w) setWinner(w);
+            else if (!newBoard.includes(null)) setWinner('Hòa');
+            else setIsPlayerTurn(true); // Trả lại lượt cho người chơi
           }
         }
-      }, 1000); // 1s Delay
+      }, 600); // Đợi đúng 0.6s
+
       return () => clearTimeout(timer);
     }
-  }, [isPlayerTurn, roundWinner, gameWinner, board]);
+  }, [isPlayerTurn, winner, board]);
 
-  const handleMove = (index: number, isHuman: boolean) => {
-    if (board[index] || roundWinner || gameWinner) return;
-    if (isHuman && !isPlayerTurn) return;
+  // --- LOGIC CỦA NGƯỜI CHƠI ---
+  const handlePlayerClick = (index: number) => {
+    // Nếu ô đã có tích, hoặc đã có người thắng, hoặc KHÔNG PHẢI LƯỢT BẠN -> Chặn luôn
+    if (board[index] || winner || !isPlayerTurn) return;
 
+    // 1. Người đi
     const newBoard = [...board];
-    newBoard[index] = isHuman ? '❤️' : '⭕';
+    newBoard[index] = '❤️'; // Bạn là Tim
     setBoard(newBoard);
     
-    const w = checkWinCondition(newBoard);
-    
-    if (w) {
-      // Có người thắng vòng này
-      setRoundWinner(w);
-      const newScores = { ...scores };
-      if (w === '❤️') newScores.player += 1;
-      else newScores.bot += 1;
-      
-      setScores(newScores);
+    // 2. Khóa lượt người chơi ngay lập tức (Chuyển sang máy)
+    setIsPlayerTurn(false);
 
-      // Kiểm tra thắng chung cuộc (BO3)
-      if (newScores.player >= WIN_SERIES) setGameWinner('Bạn (❤️)');
-      else if (newScores.bot >= WIN_SERIES) setGameWinner('Máy (⭕)');
-
-    } else if (!newBoard.includes(null)) {
-      setRoundWinner('Hòa'); // Hết ô mà ko ai thắng
-    } else {
-      setIsPlayerTurn(!isHuman);
-    }
+    // 3. Kiểm tra thắng thua
+    const w = checkWinner(newBoard);
+    if (w) setWinner(w);
+    else if (!newBoard.includes(null)) setWinner('Hòa');
   };
 
-  const nextRound = () => {
-    setBoard(Array(SIZE * SIZE).fill(null));
-    setRoundWinner(null);
-    setIsPlayerTurn(true); // Bạn luôn đi trước cho dễ
-  };
-
-  const resetGameFull = () => {
-    setBoard(Array(SIZE * SIZE).fill(null));
-    setRoundWinner(null);
-    setGameWinner(null);
-    setScores({ player: 0, bot: 0 });
-    setIsPlayerTurn(true);
+  const resetGame = () => {
+    setBoard(Array(9).fill(null));
+    setWinner(null);
+    setIsPlayerTurn(true); // Reset lại bạn đi trước
   };
 
   return (
-    <div className="w-full max-w-[340px] mx-auto mt-6">
+    <div className="w-full max-w-[320px] mx-auto mt-6">
       <div className="bg-white rounded-2xl shadow-xl border border-pink-200 overflow-hidden">
         
-        {/* Header Tỉ số */}
-        <div className="px-4 py-3 bg-gradient-to-r from-pink-100 to-white border-b border-pink-100">
-          <div className="flex justify-between items-center mb-1">
-             <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Tỉ số (Chạm {WIN_SERIES} thắng)</span>
-             <button onClick={resetGameFull} className="text-[10px] bg-white border border-pink-200 px-2 py-0.5 rounded hover:bg-pink-50 text-gray-400">
-                Reset
-             </button>
+        {/* Header Game */}
+        <div className="px-4 py-3 bg-gradient-to-r from-pink-100 to-white flex items-center justify-between border-b border-pink-100">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🎮</span>
+            <span className="text-xs font-bold text-pink-600 uppercase tracking-widest">
+              Tic-Tac-Toe
+            </span>
           </div>
-          <div className="flex justify-between items-center text-lg font-bold">
-             <div className="text-pink-600">Bạn: {scores.player}</div>
-             <div className="text-gray-400 text-sm">vs</div>
-             <div className="text-blue-500">Máy: {scores.bot}</div>
-          </div>
+          <button onClick={resetGame} className="text-xs bg-white border border-pink-200 px-3 py-1 rounded hover:bg-pink-50 text-gray-500 transition">
+            Chơi lại ↺
+          </button>
         </div>
 
-        {/* Bàn cờ 5x5 */}
-        <div className="p-4 bg-pink-50/50 relative min-h-[300px] flex items-center justify-center">
+        {/* Bàn cờ 3x3 */}
+        <div className="p-4 bg-pink-50/50 relative">
           
-          {/* Màn hình thông báo kết quả */}
-          {(roundWinner || gameWinner) ? (
-            <div className="absolute inset-0 z-10 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center animate-fade-in">
-              {gameWinner ? (
-                <>
-                  <div className="text-4xl mb-2">🏆</div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">CHUNG CUỘC</h3>
-                  <p className="text-pink-600 font-bold text-lg mb-4">{gameWinner} Vô Địch!</p>
-                  <button onClick={resetGameFull} className="px-6 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-full shadow-lg hover:scale-105 transition">
-                    Chơi lại từ đầu
-                  </button>
-                </>
-              ) : (
-                <>
-                  <div className="text-3xl mb-2">{roundWinner === 'Hòa' ? '🤝' : '🎉'}</div>
-                  <p className="text-gray-700 font-bold text-lg mb-4">
-                    {roundWinner === 'Hòa' ? 'Ván này Hòa!' : `${roundWinner} thắng ván này!`}
-                  </p>
-                  <button onClick={nextRound} className="px-5 py-2 bg-pink-500 text-white rounded-full shadow hover:bg-pink-600 transition">
-                    Tiếp ván sau ➡
-                  </button>
-                </>
-              )}
+          {/* Lớp phủ thông báo kết quả */}
+          {winner && (
+            <div className="absolute inset-0 z-10 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center animate-fade-in">
+              <p className="text-2xl mb-2">{winner === 'Hòa' ? '🤝' : '🏆'}</p>
+              <p className="text-xl font-bold text-gray-800 mb-4">
+                {winner === 'Hòa' ? 'Hòa nhau rồi!' : (winner === '❤️' ? 'Bạn thắng!' : 'Máy thắng!')}
+              </p>
+              <button 
+                onClick={resetGame}
+                className="px-6 py-2 bg-pink-500 text-white rounded-full shadow-lg hover:bg-pink-600 transition hover:scale-105"
+              >
+                Ván mới nha
+              </button>
             </div>
-          ) : null}
+          )}
 
-          {/* Grid 5x5 */}
-          <div className="grid grid-cols-5 gap-1.5 w-full">
+          <div className="grid grid-cols-3 gap-2">
             {board.map((cell, index) => (
               <button
                 key={index}
-                onClick={() => handleMove(index, true)}
-                className={`aspect-square w-full bg-white rounded-lg shadow-sm border border-pink-100 text-xl md:text-2xl flex items-center justify-center transition-all hover:bg-pink-50 ${!cell && isPlayerTurn && !roundWinner ? 'hover:scale-95' : ''}`}
-                disabled={!!cell || !isPlayerTurn || !!roundWinner}
+                onClick={() => handlePlayerClick(index)}
+                disabled={!!cell || !isPlayerTurn || !!winner} // Disable nút khi không phải lượt
+                className={`h-20 w-full bg-white rounded-xl shadow-sm border-2 text-3xl flex items-center justify-center transition-all 
+                  ${cell ? 'border-pink-200' : 'border-white'} 
+                  ${!cell && isPlayerTurn && !winner ? 'hover:bg-pink-100 cursor-pointer' : 'cursor-default'}
+                  ${!isPlayerTurn && !cell && !winner ? 'opacity-50' : 'opacity-100'} 
+                `}
               >
-                <span className={cell ? 'scale-100 transition-transform duration-300' : 'scale-0'}>
+                <span className={`transform transition-transform duration-300 ${cell ? 'scale-100' : 'scale-0'}`}>
                   {cell}
                 </span>
               </button>
@@ -163,9 +137,9 @@ const CaroGame = () => {
         </div>
 
         {/* Footer trạng thái */}
-        {!gameWinner && !roundWinner && (
-          <div className="px-4 py-2 bg-white text-center text-xs text-gray-500 font-medium">
-             {isPlayerTurn ? "Đến lượt bạn (❤️) - Cần nối 3 ô" : "Máy đang tính nước đi..."}
+        {!winner && (
+          <div className={`px-4 py-2 text-center text-xs font-medium transition-colors duration-300 ${isPlayerTurn ? 'bg-pink-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
+             {isPlayerTurn ? "👉 Lượt của bạn (❤️)" : "🤖 Máy đang nghĩ..."}
           </div>
         )}
       </div>
@@ -217,11 +191,11 @@ function App() {
              {/* Khu vực Trò chơi */}
              <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col items-center">
                <p className="text-gray-500 italic font-script text-xl md:text-2xl mb-2">
-                 "Giải trí xíu nha: Chạm 2 là thắng!" 👇
+                 "Làm ván cờ giải trí nhé!" 👇
                </p>
                
-               {/* Component Game Caro 5x5 */}
-               <CaroGame />
+               {/* Component Game 3x3 */}
+               <TicTacToe />
 
              </div>
           </div>
