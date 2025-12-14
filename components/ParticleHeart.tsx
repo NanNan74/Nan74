@@ -97,9 +97,10 @@ const ParticleHeart: React.FC = () => {
     const render = (timeMs: number) => {
       ctx.clearRect(0, 0, width, height);
 
-      // Slow down the animation slightly to match the "thump" feel
-      // curve input moves from 0 to 2PI over the cycle
-      const cycleSpeed = 0.003; 
+      // Slow down the animation. 
+      // 0.003 was fast (~0.5s). 
+      // 0.0008 is approximately 2 seconds per beat cycle.
+      const cycleSpeed = 0.0008; 
       const t = timeMs * cycleSpeed; 
       
       // Calculate curve value (the beat)
