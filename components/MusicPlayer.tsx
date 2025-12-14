@@ -2,41 +2,32 @@ import React, { useRef, useState, useEffect } from 'react';
 
 const MusicPlayer: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.5);
-  const [musicUrl, setMusicUrl] = useState("");
   const [inputUrl, setInputUrl] = useState("");
-  const [isSaved, setIsSaved] = useState(false);
+  const [mediaSource, setMediaSource] = useState<{ type: 'none' | 'mp3' | 'youtube', url: string, youtubeId?: string }>({ type: 'none', url: '' });
   const [isExpanded, setIsExpanded] = useState(true);
 
-  const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play().catch(e => console.log("Audio autoplay blocked", e));
-      }
-      setIsPlaying(!isPlaying);
-    }
+  // Helper to extract YouTube ID
+  const getYouTubeId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
   };
 
   const handleSave = () => {
-    if (inputUrl.trim()) {
-      setMusicUrl(inputUrl);
-      setIsSaved(true);
-      // Auto play after save
-      setTimeout(() => {
-        if (audioRef.current) {
-          audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error("Auto-play blocked", e));
-        }
-      }, 500);
+    if (!inputUrl.trim()) return;
+
+    const youtubeId = getYouTubeId(inputUrl);
+    if (youtubeId) {
+      setMediaSource({ type: 'youtube', url: inputUrl, youtubeId });
+    } else {
+      setMediaSource({ type: 'mp3', url: inputUrl });
     }
   };
 
   const handleEdit = () => {
-    setIsSaved(false);
-    setIsPlaying(false);
-    if(audioRef.current) audioRef.current.pause();
+    setMediaSource({ type: 'none', url: '' });
+    setInputUrl("");
   };
 
   useEffect(() => {
@@ -74,15 +65,15 @@ const MusicPlayer: React.FC = () => {
         </button>
       </div>
 
-      {!isSaved ? (
+      {mediaSource.type === 'none' ? (
         <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2">
-          <label className="text-xs text-gray-600">Dán link nhạc (mp3) vào đây:</label>
+          <label className="text-xs text-gray-600">Dán link nhạc (YouTube hoặc MP3):</label>
           <div className="flex gap-2">
             <input 
               type="text" 
               value={inputUrl}
               onChange={(e) => setInputUrl(e.target.value)}
-              placeholder="https://example.com/song.mp3"
+              placeholder="https://youtu.be/..."
               className="flex-1 text-xs border border-gray-300 rounded-lg px-2 py-2 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500"
             />
             <button 
@@ -93,54 +84,47 @@ const MusicPlayer: React.FC = () => {
               Lưu
             </button>
           </div>
-          <p className="text-[10px] text-gray-400 italic">Gợi ý: Dùng link trực tiếp đuôi .mp3 để hoạt động tốt nhất.</p>
+          <p className="text-[10px] text-gray-400 italic">Hỗ trợ link YouTube, mp3.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3 animate-in fade-in zoom-in-95">
-          <audio ref={audioRef} loop src={musicUrl} onError={() => alert("Không thể phát link này. Hãy thử link khác!")} />
           
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-                <button
-                onClick={togglePlay}
-                className={`w-10 h-10 flex items-center justify-center rounded-full text-white shadow-md transition-all active:scale-95 ${
-                    isPlaying ? 'bg-pink-500 hover:bg-pink-600 ring-2 ring-pink-200' : 'bg-gray-400 hover:bg-gray-500'
-                }`}
-                >
-                {isPlaying ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
-                    </svg>
-                ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 pl-0.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
-                    </svg>
-                )}
-                </button>
-                <div className="flex flex-col overflow-hidden">
-                    <span className="text-xs font-bold text-gray-700 truncate w-32">
-                        {isPlaying ? 'Đang phát...' : 'Đã tạm dừng'}
-                    </span>
-                    <button onClick={handleEdit} className="text-[10px] text-blue-500 hover:underline text-left">
-                        Sửa link nhạc
-                    </button>
-                </div>
+          {mediaSource.type === 'youtube' && mediaSource.youtubeId && (
+            <div className="rounded-lg overflow-hidden border border-gray-200 bg-black">
+              <iframe 
+                width="100%" 
+                height="150" 
+                src={`https://www.youtube.com/embed/${mediaSource.youtubeId}?autoplay=1`} 
+                title="YouTube video player" 
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowFullScreen
+              ></iframe>
             </div>
-            
-            <div className="flex items-center gap-1">
-                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 text-gray-400">
-                    <path d="M10 3.75a.75.75 0 00-1.264-.546L4.703 7H3.167a.75.75 0 00-.75.75v4.5c0 .414.336.75.75.75h1.536l4.033 3.796A.75.75 0 0010 16.25V3.75zM14 10a4.002 4.002 0 00-1.172-2.828.75.75 0 10-1.06 1.06c.586.586.914 1.378.914 2.207s-.328 1.62-.914 2.207a.75.75 0 101.06 1.06A4.002 4.002 0 0014 10z" />
-                </svg>
-                <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={volume}
-                onChange={(e) => setVolume(parseFloat(e.target.value))}
-                className="w-16 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-pink-500"
-                />
-            </div>
+          )}
+
+          {mediaSource.type === 'mp3' && (
+            <>
+               <audio ref={audioRef} controls autoPlay loop src={mediaSource.url} className="w-full h-8" onError={() => alert("Link MP3 không hoạt động.")} />
+               <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>Điều chỉnh âm lượng</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={volume}
+                    onChange={(e) => setVolume(parseFloat(e.target.value))}
+                    className="w-20 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                  />
+               </div>
+            </>
+          )}
+          
+          <div className="flex justify-end">
+            <button onClick={handleEdit} className="text-[10px] text-blue-500 hover:underline">
+                Đổi link nhạc khác
+            </button>
           </div>
         </div>
       )}

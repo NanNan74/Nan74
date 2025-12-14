@@ -12,192 +12,132 @@ const ParticleHeart: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // 1. Setup Canvas
-    const updateSize = () => {
-      canvas.width = container.clientWidth;
-      canvas.height = container.clientHeight;
-    };
-    updateSize();
+    // --- Configuration ---
+    const TOTAL_PARTICLES = 3000; // Đã nâng lên 3000 hạt
+    const HEART_COLOR = "#ff5ca8"; // Màu hồng chủ đạo
+    const HEART_COLOR_CORE = "#ff85c2"; // Màu lõi sáng hơn chút
+    
+    // Arrays to store particle data
+    let particles: { x: number; y: number; size: number; color: string; velocity: {x: number, y: number}, basePos: {x: number, y: number} }[] = [];
+    let animationFrameId: number;
+    let time = 0;
 
-    let width = canvas.width;
-    let height = canvas.height;
+    // --- Math Functions ---
 
-    // Fallback if size is 0 (prevents crash)
-    if (width === 0 || height === 0) {
-      width = 300;
-      height = 300;
-      canvas.width = 300;
-      canvas.height = 300;
-    }
-
-    const HEART_COLOR = "#ff5ca8";
-    const CANVAS_CENTER_X = width / 2;
-    const CANVAS_CENTER_Y = height / 2;
-    const SCALE_FACTOR = Math.min(width, height) / 50; 
-    const FRAME_COUNT = 20; // Number of animation frames to pre-calculate (matches Python)
-
-    // --- Math Helpers ---
+    // Hàm tạo dáng trái tim chuẩn
     const heartFunction = (t: number, scale: number) => {
       let x = 16 * Math.pow(Math.sin(t), 3);
       let y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-      x *= scale;
-      y *= scale;
-      x += CANVAS_CENTER_X;
-      y += CANVAS_CENTER_Y;
-      return { x, y };
+      return { x: x * scale, y: y * scale };
     };
 
+    // Hàm phân tán hạt vào trong (tạo độ dày) - dùng Logarit
     const scatterInside = (x: number, y: number, beta: number) => {
-      // Safety: Math.random() can be 0, Math.log(0) is -Infinity. Use || 1e-9 safety.
-      const ratio_x = -beta * Math.log(Math.random() || 1e-9);
-      const ratio_y = -beta * Math.log(Math.random() || 1e-9);
-      const dx = ratio_x * (x - CANVAS_CENTER_X);
-      const dy = ratio_y * (y - CANVAS_CENTER_Y);
-      return { x: x - dx, y: y - dy };
-    };
-
-    const shrink = (x: number, y: number, ratio: number) => {
-      const distSq = (x - CANVAS_CENTER_X) ** 2 + (y - CANVAS_CENTER_Y) ** 2;
-      // Safety: max(distSq, 1) to avoid division by zero
-      const force = -1 / Math.pow(Math.max(distSq, 1), 0.6);
-      const dx = ratio * force * (x - CANVAS_CENTER_X);
-      const dy = ratio * force * (y - CANVAS_CENTER_Y);
-      return { x: x - dx, y: y - dy };
-    };
-
-    const curve = (p: number) => {
-      return 2 * (2 * Math.sin(4 * p)) / (2 * Math.PI);
-    };
-
-    const calcPosition = (x: number, y: number, ratio: number) => {
-      const distSq = (x - CANVAS_CENTER_X) ** 2 + (y - CANVAS_CENTER_Y) ** 2;
-      const force = 1 / Math.pow(Math.max(distSq, 1), 0.52);
-      const dx = ratio * force * (x - CANVAS_CENTER_X) + (Math.random() * 2 - 1);
-      const dy = ratio * force * (y - CANVAS_CENTER_Y) + (Math.random() * 2 - 1);
-      return { x: x - dx, y: y - dy };
-    };
-
-    // --- Pre-calculation Phase (Heavy work done ONCE here) ---
-    
-    // 1. Build Base Structure
-    const points: {x: number, y: number}[] = [];
-    const edgeDiffusionPoints: {x: number, y: number}[] = [];
-    const centerDiffusionPoints: {x: number, y: number}[] = [];
-
-    // Ring
-    for (let i = 0; i < 2000; i++) {
-      const t = Math.random() * 2 * Math.PI;
-      points.push(heartFunction(t, SCALE_FACTOR));
-    }
-
-    // Edge
-    points.forEach(p => {
-      for (let i = 0; i < 3; i++) {
-        edgeDiffusionPoints.push(scatterInside(p.x, p.y, 0.05));
-      }
-    });
-
-    // Center
-    for (let i = 0; i < 4000; i++) {
-      const p = points[Math.floor(Math.random() * points.length)];
-      centerDiffusionPoints.push(scatterInside(p.x, p.y, 0.17));
-    }
-
-    // 2. Build Animation Frames
-    const frames: {x: number, y: number, size: number}[][] = [];
-
-    for (let f = 0; f < FRAME_COUNT; f++) {
-      const framePoints: {x: number, y: number, size: number}[] = [];
-      // Calculate curve for this frame (simulating the Python 'generate_frame' logic)
-      // Python logic uses range(0, 20).
-      const p = (f / FRAME_COUNT) * Math.PI; 
-      const curveValue = curve(p); 
+      const ratio_x = -beta * Math.log(Math.random());
+      const ratio_y = -beta * Math.log(Math.random());
       
-      const ratio = 10 * curveValue;
-      const haloRadius = 4 + 6 * (1 + curveValue);
-      const haloNumber = Math.floor(1000 + 2000 * Math.abs(Math.pow(curveValue, 2)));
+      const dx = ratio_x * x;
+      const dy = ratio_y * y;
+      
+      return { x: x - dx, y: y - dy };
+    };
 
-      // Generate Halo for this frame
-      const heartHaloSet = new Set<string>();
-      for (let i = 0; i < haloNumber; i++) {
-        const rad = Math.random() * 2 * Math.PI;
-        let pos = heartFunction(rad, SCALE_FACTOR * 1.05); 
-        pos = shrink(pos.x, pos.y, haloRadius);
+    const initParticles = (width: number, height: number) => {
+      particles = [];
+      // Tinh chỉnh scale dựa trên màn hình
+      const scale = Math.min(width, height) / 45; 
+
+      // Tạo hạt
+      for (let i = 0; i < TOTAL_PARTICLES; i++) {
+        const t = Math.random() * Math.PI * 2;
+        const pos = heartFunction(t, scale);
         
-        const key = `${Math.floor(pos.x)},${Math.floor(pos.y)}`;
-        if (!heartHaloSet.has(key)) {
-          heartHaloSet.add(key);
-          const x = pos.x + (Math.random() * 28 - 14);
-          const y = pos.y + (Math.random() * 28 - 14);
-          const size = Math.random() < 0.3 ? 2 : 1; 
-          framePoints.push({ x, y, size });
-        }
-      }
+        // Phân loại hạt để tạo hiệu ứng 3D
+        let finalX = pos.x;
+        let finalY = pos.y;
+        let size = Math.random() * 1.5 + 0.5; // Kích thước hạt từ 0.5 đến 2px
+        let color = HEART_COLOR;
 
-      // Apply effects to base points
-      [...points, ...edgeDiffusionPoints, ...centerDiffusionPoints].forEach(pt => {
-        const newPos = calcPosition(pt.x, pt.y, ratio);
-        const size = Math.random() < 0.5 ? 1 : Math.random() < 0.5 ? 2 : 1.5;
-        framePoints.push({ x: newPos.x, y: newPos.y, size });
+        const randomVal = Math.random();
+
+        if (randomVal < 0.15) {
+            // 15% hạt: Viền sắc nét
+        } else if (randomVal < 0.7) {
+            // 55% hạt: Phân tán vào trong (tạo body)
+            const scattered = scatterInside(pos.x, pos.y, 0.15); 
+            finalX = scattered.x;
+            finalY = scattered.y;
+            size = Math.random() * 1.2; // Hạt bên trong nhỏ hơn chút cho mịn
+        } else {
+            // 30% hạt: Halo mờ ảo
+            const scattered = scatterInside(pos.x, pos.y, 0.25);
+            finalX = scattered.x;
+            finalY = scattered.y;
+            color = HEART_COLOR_CORE;
+            size = Math.random() * 0.8 + 0.2; // Hạt halo nhỏ li ti
+        }
+
+        particles.push({
+          x: finalX,
+          y: finalY,
+          basePos: { x: finalX, y: finalY }, // Lưu vị trí gốc (tương đối so với tâm)
+          size: size,
+          color: color,
+          velocity: { x: 0, y: 0 }
+        });
+      }
+    };
+
+    const render = () => {
+      if (!ctx || !canvas) return;
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+
+      // Nhịp tim
+      // Sử dụng công thức mô phỏng nhịp tim thực tế
+      const t = Date.now() / 1000;
+      const beat = 1 + 0.08 * (
+          Math.sin(t * 3) * 0.5 + 
+          Math.sin(t * 6) * 0.1
+      );
+
+      particles.forEach(p => {
+        // Vị trí hiện tại = Vị trí gốc * độ phóng đại của nhịp tim
+        const currentX = centerX + p.basePos.x * beat;
+        const currentY = centerY + p.basePos.y * beat;
+
+        ctx.fillStyle = p.color;
+        
+        // Vẽ hình vuông tối ưu hiệu năng
+        ctx.fillRect(currentX, currentY, p.size, p.size);
       });
 
-      frames.push(framePoints);
-    }
-
-    // --- Render Loop ---
-    let animationFrameId: number;
-    
-    // We want the cycle to last ~2 seconds.
-    // There are 20 frames. So each frame should display for 2000ms / 20 = 100ms.
-    const FPS = 15; // Slow down the frame rate intentionally for the "beating" feel
-    let lastDrawTime = 0;
-    let currentFrameIndex = 0;
-
-    const render = (time: number) => {
-      const deltaTime = time - lastDrawTime;
-      
-      if (deltaTime > 1000 / FPS) {
-        lastDrawTime = time;
-        
-        ctx.clearRect(0, 0, width, height);
-        ctx.fillStyle = HEART_COLOR;
-        
-        const pointsToDraw = frames[currentFrameIndex];
-        // Optimize drawing: Use 1x1 rects or small rects
-        for (let i = 0; i < pointsToDraw.length; i++) {
-          const p = pointsToDraw[i];
-          ctx.fillRect(p.x, p.y, p.size, p.size);
-        }
-
-        currentFrameIndex = (currentFrameIndex + 1) % FRAME_COUNT;
-      }
-      
       animationFrameId = requestAnimationFrame(render);
     };
 
-    animationFrameId = requestAnimationFrame(render);
-
-    // Resize handler (Simplistic: Just clear and restart/reload would be better but expensive)
     const handleResize = () => {
-       // In a real optimized app, we would debounce this and re-run calculations.
-       // For now, let's just update width/height so it doesn't stretch weirdly, 
-       // but the heart might be off-center until refresh.
-       if (container) {
-         canvas.width = container.clientWidth;
-         canvas.height = container.clientHeight;
-       }
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+      initParticles(canvas.width, canvas.height);
     };
 
-    window.addEventListener('resize', handleResize);
+    handleResize();
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(container);
+
+    render();
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
 
   return (
-    <div ref={containerRef} className="w-full h-80 md:h-96 my-6 relative flex items-center justify-center overflow-hidden">
+    <div ref={containerRef} className="w-full h-80 md:h-96 my-6 relative flex items-center justify-center">
       <canvas ref={canvasRef} className="block" />
     </div>
   );
