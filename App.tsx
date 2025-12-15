@@ -8,8 +8,8 @@ const TicTacToeSmart = () => {
 
   const [board, setBoard] = useState(Array(9).fill(null));
   const [isPlayerTurn, setIsPlayerTurn] = useState(true); 
-  const [roundWinner, setRoundWinner] = useState<string | null>(null);
-  const [gameWinner, setGameWinner] = useState<string | null>(null);
+  const [roundWinner, setRoundWinner] = useState(null);
+  const [gameWinner, setGameWinner] = useState(null);
   const [scores, setScores] = useState({ player: 0, bot: 0 });
   
   // State mới: Theo dõi ai là người đi trước ở ván hiện tại
@@ -22,7 +22,7 @@ const TicTacToeSmart = () => {
     [0, 4, 8], [2, 4, 6]             // Chéo
   ];
 
-  const checkWinner = (squares: any[]) => {
+  const checkWinner = (squares) => {
     for (let i = 0; i < WINNING_LINES.length; i++) {
       const [a, b, c] = WINNING_LINES[i];
       if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
@@ -32,7 +32,7 @@ const TicTacToeSmart = () => {
     return null;
   };
 
-  const handleWin = (winnerSign: string) => {
+  const handleWin = (winnerSign) => {
     setRoundWinner(winnerSign);
     const newScores = { ...scores };
     if (winnerSign === '❤️') newScores.player += 1;
@@ -44,7 +44,7 @@ const TicTacToeSmart = () => {
   };
 
   // --- TRÍ TUỆ NHÂN TẠO CỦA BOT ---
-  const getSmartMove = (currentBoard: any[]) => {
+  const getSmartMove = (currentBoard) => {
     // 1. ƯU TIÊN THẮNG
     for (let line of WINNING_LINES) {
       const [a, b, c] = line;
@@ -96,7 +96,7 @@ const TicTacToeSmart = () => {
   }, [isPlayerTurn, roundWinner, gameWinner, board]);
 
   // --- PLAYER MOVE ---
-  const handlePlayerClick = (index: number) => {
+  const handlePlayerClick = (index) => {
     if (board[index] || roundWinner || gameWinner || !isPlayerTurn) return;
 
     const newBoard = [...board];
@@ -132,7 +132,7 @@ const TicTacToeSmart = () => {
   };
 
   return (
-    <div className="w-full max-w-[320px] mx-auto mt-6">
+    <div className="w-full max-w-[320px] mx-auto mt-6 relative z-30">
       <div className="bg-white rounded-2xl shadow-xl border border-pink-200 overflow-hidden relative">
         
         {/* Header Tỉ số */}
@@ -241,8 +241,8 @@ function App() {
       
       <main className={`relative z-20 flex flex-col items-center justify-center min-h-screen p-4 transition-opacity duration-1000 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
         
-        {/* Card Chính */}
-        <div className="bg-white/80 backdrop-blur-md shadow-2xl rounded-3xl p-6 md:p-10 max-w-4xl w-full text-center border border-white/50 relative overflow-hidden">
+        {/* Card Chính: Đã thêm z-10 để nổi hẳn lên trên */}
+        <div className="bg-white/80 backdrop-blur-md shadow-2xl rounded-3xl p-6 md:p-10 max-w-4xl w-full text-center border border-white/50 relative overflow-hidden z-10">
           
           <h1 className="font-script text-4xl md:text-5xl lg:text-6xl bg-gradient-to-r from-pink-600 to-violet-600 bg-clip-text text-transparent mb-4 leading-tight">
             Cảm ơn cả nhà đã ủng hộ tym, comment, share cho Slầy Gơ ạaaa ❤️
@@ -279,9 +279,9 @@ function App() {
 
         </div>
 
-        {/* Decorative Circles */}
-        <div className="absolute top-20 left-10 w-20 h-20 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-bounce"></div>
-        <div className="absolute bottom-20 right-10 w-32 h-32 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-bounce delay-700"></div>
+        {/* Decorative Circles: Đã thêm pointer-events-none để không chặn click */}
+        <div className="absolute top-20 left-10 w-20 h-20 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-bounce pointer-events-none"></div>
+        <div className="absolute bottom-20 right-10 w-32 h-32 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-bounce delay-700 pointer-events-none"></div>
 
       </main>
     </div>
